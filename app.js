@@ -6,19 +6,41 @@ import authRoutes from './routes/authRoutes'
 import userRoutes from './routes/userRoutes'
 import conversationRoutes from './routes/conversationRoutes'
 import messageRoutes from './routes/messageRoutes'
+import {sendMessage} from './controllers/messageController'
 const { requireAuth, checkUser } = require('./middlewares/authMiddleware');
 const app = express();
-
+const server = require('http').createServer();
+const options={
+  cors:true,
+  origins:["http://localhost:3000"],
+ }
+const io = require('socket.io')(server, options);
+io.on('connection', socket => {
+  socket.on('join-room', (data) =>{
+    socket.join(data.conversationId)
+    //console.log(socket)
+  })
+  socket.on('leave-room', (id) =>{
+    socket.leave(id);
+  })
+  socket.on('send-message', async (data) =>{
+    const {conversationId, text,token,name} = data;
+    const newMessage = await sendMessage({conversationId, text, token});
+   
+    socket.broadcast.emit('receiveMsg', {conversationId, text, name});
+  }) 
+});
+server.listen(5000);
 // middleware
 app.use(cors());
 app.use(express.static('public'));
 app.use(express.json());
 app.use(cookieParser());
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   if(req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Methods', 'PUT, POST, PATCH, DELETE, GET');
+    res.setHeader('Access-Control-Allow-Methods', 'PUT, POST, PATCH, DELETE, GET');
     return res.status(200).json({})
   }
   next();
@@ -40,3 +62,4 @@ app.use('/auth',authRoutes)
 app.use('/user',userRoutes)
 app.use('/conversation',conversationRoutes);
 app.use('/message',messageRoutes);
+

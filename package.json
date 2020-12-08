@@ -20,6 +20,7 @@
     "mongoose": "^5.9.23",
     "nodemon": "^2.0.6",
     "prettier": "^2.1.2",
+    "socket.io": "^3.0.3",
     "validator": "^13.1.17"
   },
   "devDependencies": {},

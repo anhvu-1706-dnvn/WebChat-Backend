@@ -20,20 +20,27 @@ const findAll = async (id) => {
 }
 export const createConversation = async (req, res) => {
   const senderToken = req.get('token')
-  const {recipientId, text} = req.body
+  const {recipientName, text} = req.body
   const participants = [];
   if (senderToken) {
       const decodedToken = await decodeToken(senderToken);
        const senderId = decodedToken.id
-       console.log(decodedToken);
-       const recipient = await user.findById({_id: recipientId});
-       const sender = await user.findById({_id: senderId});
-         participants.push(recipient, sender)
-         console.log('PARTI: ',participants);
+      
+       try {
+         const recipient = await user.findOne({name: recipientName});
+         participants.push(recipient)
+        } catch (error) {
+          res.status(404).json({
+            message: 'Cant find user with that name'
+          })}
+          const sender = await user.findById({_id: senderId});
+            participants.push( sender)
+            // console.log('PARTI: ',participants);
+       
          try {
+           console.log(participants);
            //console.log(userToken, text);
            const newConversation = await conversation.create({
-             title: recipient.name,
              participants,
             })
             //const newMessage = await message.create({conversationId,user,text});
@@ -55,9 +62,9 @@ export const createConversation = async (req, res) => {
              conversation: newConversation,
            })
           }catch(error) {
+            console.log(error.message)
             res.status(400).json({
-              message: "Have Error",
-              error,
+              message: error.message,
             })
           }
         }
@@ -69,7 +76,7 @@ export const createConversation = async (req, res) => {
 }
 export const getConversation = async (req, res) => {
     const senderToken = req.get('token');
-    console.log(senderToken);
+    //console.log(senderToken);
     if (senderToken) {
       const decodedToken = await decodeToken(senderToken);
       const senderId = decodedToken.id
@@ -118,11 +125,22 @@ export const getConversationMessages = async (req,res) => {
     const messages = await message  
       .find({ conversationId: conversations._id })
       .populate('user', 'name')
+      //.select('text', 'conversationId')
       .sort('createdAt')
    // console.log(messages)
+   let arrayMes = [];
+
     if (messages.length > 0) {
+      for (let i = 0; i < messages.length; i++) {
+        let data = {
+          conversationId: messages[i].conversationId, 
+          text: messages[i].text,
+          name: messages[i].user.name
+        }
+        arrayMes.push(data);
+      }
       res.status(200).json({
-        messages
+        arrayMes,
       })
     }
   }catch (error) {

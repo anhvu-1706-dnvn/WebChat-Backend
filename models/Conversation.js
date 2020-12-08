@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
 
 const conversationSchema = new Schema({
-  title: { type: String, required: true },
+  title: { type: String },
   lastMessage: { type: Schema.Types.ObjectId, ref: 'Message' },
   //lastMessage: { type: String },
   participants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
