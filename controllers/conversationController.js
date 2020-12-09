@@ -10,7 +10,7 @@ const checkConversationExisted = async (participants) => {
   });
   if (room) return room;
   return false;
-}
+} 
 const findAll = async (id) => {
   const models = await conversation
   .find ({participants: id})
@@ -25,20 +25,21 @@ export const createConversation = async (req, res) => {
   if (senderToken) {
       const decodedToken = await decodeToken(senderToken);
        const senderId = decodedToken.id
-      
        try {
          const recipient = await user.findOne({name: recipientName});
+         if (recipient === null) throw 'User isnt here'
          participants.push(recipient)
         } catch (error) {
           res.status(404).json({
             message: 'Cant find user with that name'
-          })}
+          })
+          return;
+        }
           const sender = await user.findById({_id: senderId});
             participants.push( sender)
-            // console.log('PARTI: ',participants);
+             console.log('PARTI: ',participants);
        
          try {
-           console.log(participants);
            //console.log(userToken, text);
            const newConversation = await conversation.create({
              participants,
