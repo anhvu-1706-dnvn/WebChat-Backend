@@ -14,23 +14,66 @@ const options={
   cors:true,
   origins:["http://localhost:3000"],
  }
+ // Socket chat: http
 const io = require('socket.io')(server, options);
-io.on('connection', socket => {
+const chat = io.of('/chat')
+chat.on('connection', socket => {
   socket.on('join-room', (data) =>{
     socket.join(data.conversationId)
     //console.log(socket)
   })
-  socket.on('leave-room', (id) =>{
+  socket.on('disconnect', (id) =>{
     socket.leave(id);
-  })
+  })  
   socket.on('send-message', async (data) =>{
     const {conversationId, text,token,name} = data;
     const newMessage = await sendMessage({conversationId, text, token});
    
-    socket.broadcast.emit('receiveMsg', {conversationId, text, name});
+    socket.broadcast.to(conversationId).emit('receiveMsg', {conversationId, text, name});
   }) 
 });
 server.listen(5000);
+//Video chat
+const peers = io.of('/webrtcPeer')
+let videoConnectedPeers = new Map()
+peers.on('connection', socket => {
+  // console.log(socket.id);
+  socket.emit('connection-success', {success: socket.id});
+  videoConnectedPeers.set(socket.id, socket)
+  socket.on('join-room', (data) =>{
+    // console.log(data.conversationId)
+    socket.join(data.conversationId)
+    //console.log(socket)
+  })
+  socket.on('disconnect', () => {
+    console.log('disconnect');
+    videoConnectedPeers.delete(socket.id)
+  })
+  socket.on('offerOrAnswer', (data) => {
+    console.log(data.socketId);
+    // for (const [socketId, socket] of videoConnectedPeers.entries()) {
+    //   // dont send to self 
+    //   if (socketId !== data.socketId ) {
+    //     // console.log(socketId, data.payload.type);
+    //     socket.emit('offerOrAnswer', data.payload)
+    //   }
+    // }
+    socket.broadcast.to(data.conversationId).emit('offerOrAnswer', data.payload);
+  })
+  socket.on('candidate', (data) => {
+    console.log(data.socketId);
+    for (const [socketId, socket] of videoConnectedPeers.entries()) {
+      if (socketId !== data.socketId) {
+        // console.log('candidate',socketId, data.payload);
+        socket.emit('candidate', data.payload);
+      }
+    }
+  })
+})
+
+
+
+
 // middleware
 app.use(cors());
 app.use(express.static('public'));
@@ -62,4 +105,4 @@ app.use('/auth',authRoutes)
 app.use('/user',userRoutes)
 app.use('/conversation',conversationRoutes);
 app.use('/message',messageRoutes);
-
+// app.use('/videoChat', videoRoutes);;
