@@ -1,6 +1,5 @@
 const User = require('../models/User')
 const jwt = require('jsonwebtoken');
-const { resolveConfig } = require('prettier');
 module.exports.findUsersExceptMe = async (req, res, next) => {
   const {token} = req.body;
   //console.log(token);
@@ -20,20 +19,4 @@ module.exports.findUsersExceptMe = async (req, res, next) => {
     res.status(400).json({errors: 'Must login'})
   }
 }
-// module.exports.findUsersByName = async (req, res) => {
-//   const {name} = req.body;
-//   try {
-//     let user = await User.find({name: name});
-//     if (user) {
-//       res.status(200).json({
-//         message: 'User found',
-//         user,
-//       })
-//     } else {
-//       res.status(400).json({errors: 'User not found'})
-//     }
-//   }catch (err) {
-//     res.status(400).json({errors: err.message})
-//   }
-  
-// }
+

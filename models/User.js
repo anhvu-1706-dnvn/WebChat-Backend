@@ -20,13 +20,11 @@ const userSchema = new mongoose.Schema({
     minlength: [4, 'Name must be at least 4 characters'],  
   },
 })
-//fire a function before doc saved to db *** NEVER USE ARROW FUNCTION HERE OR U WILL BE RAPED
 userSchema.pre('save', async function(next){
   const salt = await bcrypt.genSalt();
   this.password = await bcrypt.hash(this.password, salt);
   return next();
 })
-// static methods to login users
 userSchema.statics.login = async function(email, password ) {
   const user = await this.findOne({ email});
   if (user) {

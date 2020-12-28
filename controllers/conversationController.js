@@ -8,7 +8,7 @@ const checkConversationExisted = async (participants) => {
   const room = await conversation.find({
     participants: {$all: participants}
   });
-  if (room) return room;
+  if (room.length > 0) return room;
   return false;
 } 
 const findAll = async (id) => {
@@ -37,14 +37,16 @@ export const createConversation = async (req, res) => {
         }
           const sender = await user.findById({_id: senderId});
             participants.push( sender)
-             console.log('PARTI: ',participants);
-       
+        if(await checkConversationExisted(participants)) {
+          res.status(404).json({
+            message: 'Duplicate Conversation',
+          })
+          return;
+        }
          try {
-           //console.log(userToken, text);
            const newConversation = await conversation.create({
              participants,
             })
-            //const newMessage = await message.create({conversationId,user,text});
             const newMessage = await message.create({
               conversationId: newConversation._id, 
               user: senderId, 
@@ -77,15 +79,11 @@ export const createConversation = async (req, res) => {
 }
 export const getConversation = async (req, res) => {
     const senderToken = req.get('token');
-    //console.log(senderToken);
     if (senderToken) {
       const decodedToken = await decodeToken(senderToken);
       const senderId = decodedToken.id
-      //console.log(decodedToken);
            try {
-            // const checkConversation = await checkConversationExisted(await user.findById({_id: senderId}));
              const checkConversation = await findAll( senderId);
-           // console.log(checkConversation);
             if (checkConversation) {
               res.status(200).json({
                 message: 'Found Conversation',
@@ -119,16 +117,12 @@ export const getConversation = async (req, res) => {
 }
 export const getConversationMessages = async (req,res) => {
   const id = req.get('conversationId');
- // console.log(id);
   const conversations = await conversation.findById({_id: id});
- // console.log(conversations)
   try {
     const messages = await message  
       .find({ conversationId: conversations._id })
       .populate('user', 'name')
-      //.select('text', 'conversationId')
       .sort('createdAt')
-   // console.log(messages)
    let arrayMes = [];
 
     if (messages.length > 0) {

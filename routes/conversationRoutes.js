@@ -1,5 +1,3 @@
-import { route } from './authRoutes';
-
 const {Router } = require('express');
 const conversationController = require('../controllers/conversationController')
 const router = Router();

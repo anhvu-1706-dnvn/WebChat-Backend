@@ -9,10 +9,11 @@ import messageRoutes from './routes/messageRoutes'
 import {sendMessage} from './controllers/messageController'
 const { requireAuth, checkUser } = require('./middlewares/authMiddleware');
 const app = express();
+app.use(cors());
 const server = require('http').createServer();
 const options={
   cors:true,
-  origins:["http://localhost:3000"],
+  origins:["https://5fe48e5232319c70c9ea5e18--quizzical-agnesi-9c8768.netlify.app/"],
  }
  // Socket chat: http
 const io = require('socket.io')(server, options);
@@ -27,7 +28,7 @@ chat.on('connection', socket => {
   })  
   socket.on('send-message', async (data) =>{
     const {conversationId, text,token,name} = data;
-    const newMessage = await sendMessage({conversationId, text, token});
+     await sendMessage({conversationId, text, token});
    
     socket.broadcast.to(conversationId).emit('receiveMsg', {conversationId, text, name});
   }) 
@@ -41,7 +42,7 @@ peers.on('connection', socket => {
   socket.emit('connection-success', {success: socket.id});
   videoConnectedPeers.set(socket.id, socket)
   socket.on('join-room', (data) =>{
-    // console.log(data.conversationId)
+    console.log(data.conversationId)
     socket.join(data.conversationId)
     //console.log(socket)
   })
@@ -51,13 +52,6 @@ peers.on('connection', socket => {
   })
   socket.on('offerOrAnswer', (data) => {
     console.log(data.socketId);
-    // for (const [socketId, socket] of videoConnectedPeers.entries()) {
-    //   // dont send to self 
-    //   if (socketId !== data.socketId ) {
-    //     // console.log(socketId, data.payload.type);
-    //     socket.emit('offerOrAnswer', data.payload)
-    //   }
-    // }
     socket.broadcast.to(data.conversationId).emit('offerOrAnswer', data.payload);
   })
   socket.on('candidate', (data) => {
@@ -71,11 +65,8 @@ peers.on('connection', socket => {
   })
 })
 
-
-
-
 // middleware
-app.use(cors());
+
 app.use(express.static('public'));
 app.use(express.json());
 app.use(cookieParser());
